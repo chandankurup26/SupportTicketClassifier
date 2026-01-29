@@ -134,16 +134,55 @@ def get_tickets():
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
 # Resolve ticket
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+import psycopg2
+
+app = FastAPI()
+
+class ResolveTicket(BaseModel):
+    ticketRemarks: str
+
+def get_db_connection():
+    return psycopg2.connect(
+        host="...",
+        database="...",
+        user="...",
+        password="..."
+    )
+
 @app.post("/resolve/{complaintID}")
 def resolve_ticket(complaintID: int, data: ResolveTicket):
+    conn = None
+    cur = None
     try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
         cur.execute(
-            "UPDATE admin SET ticketStatus='Resolved', ticketRemarks=%s WHERE complaintID=%s;",
+            """
+            UPDATE admin
+            SET ticketStatus = 'Resolved',
+                ticketRemarks = %s
+            WHERE complaintID = %s;
+            """,
             (data.ticketRemarks, complaintID)
         )
+
         conn.commit()
-        return {"message": "Ticket resolved"}
+
+        return {
+            "message": "Ticket resolved",
+            "ticketRemarks": data.ticketRemarks
+        }
+
     except Exception as e:
-        conn.rollback()
+        if conn:
+            conn.rollback()
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
