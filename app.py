@@ -20,7 +20,8 @@ app = FastAPI()
 # CORS for frontend (Vercel or local)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # replace with frontend URL in production
+    allow_origins=["https://support-ticket-classifier-kappa.vercel.app"], # replace with frontend URL in production
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
