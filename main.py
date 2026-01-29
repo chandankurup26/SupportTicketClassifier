@@ -1,88 +1,74 @@
-from fastapi import FastAPI
-from db import conn, cursor
-from models import Complaint, ResolveTicket
-import google.generativeai as genai
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+import psycopg2
+from psycopg2.extras import RealDictCursor
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
-
 app = FastAPI()
+DB_URL = os.getenv("DATABASE_URL")
 
-# Gemini setup
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel("gemini-pro")
+# Models
+class Ticket(BaseModel):
+    complaint: str
 
-def classify_ticket(text):
-    prompt = f"""
-    Classify the following customer complaint into ONLY one category:
-    Billing, Technical, Delivery, or General.
+# DB Connection helper
+def get_conn():
+    return psycopg2.connect(DB_URL, cursor_factory=RealDictCursor)
 
-    Complaint: {text}
-
-    Respond with ONLY the category name.
-    """
-    response = model.generate_content(prompt)
-    return response.text.strip()
-
+# -------- Submit a ticket ----------
 @app.post("/submit")
-def submit_complaint(data: Complaint):
-    ticket_class = classify_ticket(data.complaint)
+def submit_ticket(ticket: Ticket):
+    try:
+        conn = get_conn()
+        cur = conn.cursor()
 
-    cursor.execute(
-        "INSERT INTO Customer (complaint) VALUES (%s) RETURNING custID, complaintID",
-        (data.complaint,)
-    )
-    custID, complaintID = cursor.fetchone()
+        # Simple AI classifier simulation (replace with Gemini API call)
+        text = ticket.complaint.lower()
+        if "bill" in text or "payment" in text:
+            category = "Billing"
+        elif "deliver" in text or "order" in text:
+            category = "Delivery"
+        elif "crash" in text or "bug" in text:
+            category = "Technical"
+        else:
+            category = "General"
 
-    cursor.execute(
-        "INSERT INTO Admin (custID, complaintID, ticketClass) VALUES (%s, %s, %s)",
-        (custID, complaintID, ticket_class)
-    )
+        # Insert into Customer table
+        cur.execute(
+            """
+            INSERT INTO Customer (complaint) VALUES (%s) RETURNING custID, complaintID;
+            """,
+            (ticket.complaint,),
+        )
+        row = cur.fetchone()
+        conn.commit()
+        cur.close()
+        conn.close()
 
-    conn.commit()
+        return {"custID": row["custID"], "complaintID": row["complaintID"], "classification": category}
 
-    return {
-        "message": "Complaint submitted",
-        "classification": ticket_class,
-        "complaintID": complaintID
-    }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
+# -------- Retrieve tickets ----------
 @app.get("/tickets")
 def get_tickets():
-    cursor.execute("""
-        SELECT A.ticketDate, A.custID, A.complaintID,
-               A.ticketStatus, A.ticketRemarks, A.ticketClass,
-               C.complaint
-        FROM Admin A
-        JOIN Customer C ON A.complaintID = C.complaintID
-    """)
-    rows = cursor.fetchall()
-
-    tickets = []
-    for r in rows:
-        tickets.append({
-            "ticketDate": r[0],
-            "custID": r[1],
-            "complaintID": r[2],
-            "status": r[3],
-            "remarks": r[4],
-            "class": r[5],
-            "complaint": r[6]
-        })
-    return tickets
-
-@app.post("/resolve")
-def resolve_ticket(data: ResolveTicket):
-    cursor.execute("""
-        UPDATE Admin
-        SET ticketStatus=%s, ticketRemarks=%s
-        WHERE complaintID=%s
-    """, (data.status, data.remarks, data.complaintID))
-    conn.commit()
-
-    return {"message": "Ticket updated"}
-
-@app.get("/")
-def root():
-    return {"message": "Backend is running"}
+    try:
+        conn = get_conn()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT c.complaintID, c.complaint, a.ticketClass, a.ticketStatus as status
+            FROM Customer c
+            LEFT JOIN Admin a ON c.complaintID = a.complaintID
+            ORDER BY c.complaintID DESC;
+            """
+        )
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        return rows
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
