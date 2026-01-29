@@ -85,6 +85,11 @@ def classify_complaint(text: str) -> str:
 # Endpoints
 # ----------------------
 
+@app.post("/tickets")
+def create_ticket(ticket: Complaint):
+    # Logic to save ticket, classify with Gemini API
+    return {"complaintID": 1, "classification": "Billing"}
+
 # Submit a new complaint
 @app.post("/submit")
 def submit_complaint(data: Complaint):
