@@ -6,21 +6,21 @@ import os
 from fastapi.middleware.cors import CORSMiddleware
 
 # ----------------------
-# Environment Variables
+# ENV VARIABLES
 # ----------------------
-DATABASE_URL = os.environ.get("DATABASE_URL")  # e.g. postgres://username:password@host:port/dbname
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")  # your Gemini API key
+DATABASE_URL = os.environ["DATABASE_URL"]  # Neon Postgres
+GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]  # Gemini API key
 GEMINI_API_URL = "https://api.generativeai.google/v1beta2/models/text-bison-001:generate"
 
 # ----------------------
-# Initialize FastAPI
+# FastAPI App
 # ----------------------
 app = FastAPI()
 
-# Allow CORS for frontend (replace * with your frontend URL if needed)
+# CORS for frontend (Vercel or local)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # replace with frontend URL in production
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -28,7 +28,7 @@ app.add_middleware(
 # ----------------------
 # Database Connection
 # ----------------------
-conn = psycopg2.connect(DATABASE_URL)
+conn = psycopg2.connect(DATABASE_URL, sslmode="require")
 cur = conn.cursor()
 
 # Create tables if they do not exist
@@ -90,46 +90,54 @@ def classify_complaint(text: str) -> str:
 def submit_complaint(data: Complaint):
     classification = classify_complaint(data.complaint)
 
-    # Insert into customer table
-    cur.execute("INSERT INTO customer (complaint) VALUES (%s) RETURNING custID, complaintID;", (data.complaint,))
-    custID, complaintID = cur.fetchone()
+    try:
+        cur.execute("INSERT INTO customer (complaint) VALUES (%s) RETURNING custID, complaintID;", (data.complaint,))
+        custID, complaintID = cur.fetchone()
 
-    # Insert into admin table
-    cur.execute(
-        "INSERT INTO admin (custID, complaintID, ticketClass) VALUES (%s, %s, %s);",
-        (custID, complaintID, classification)
-    )
-    conn.commit()
-
-    return {"custID": custID, "complaintID": complaintID, "classification": classification}
+        cur.execute(
+            "INSERT INTO admin (custID, complaintID, ticketClass) VALUES (%s, %s, %s);",
+            (custID, complaintID, classification)
+        )
+        conn.commit()
+        return {"custID": custID, "complaintID": complaintID, "classification": classification}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
 # Get all tickets
 @app.get("/tickets")
 def get_tickets():
-    cur.execute("""
-        SELECT a.complaintID, c.complaint, a.ticketStatus, a.ticketRemarks, a.ticketClass
-        FROM admin a
-        JOIN customer c ON a.complaintID = c.complaintID
-        ORDER BY a.ticketDate DESC;
-    """)
-    rows = cur.fetchall()
-    tickets = []
-    for r in rows:
-        tickets.append({
-            "complaintID": r[0],
-            "complaint": r[1],
-            "ticketStatus": r[2],
-            "ticketRemarks": r[3],
-            "ticketClass": r[4]
-        })
-    return tickets
+    try:
+        cur.execute("""
+            SELECT a.complaintID, c.complaint, a.ticketStatus, a.ticketRemarks, a.ticketClass
+            FROM admin a
+            JOIN customer c ON a.complaintID = c.complaintID
+            ORDER BY a.ticketDate DESC;
+        """)
+        rows = cur.fetchall()
+        tickets = []
+        for r in rows:
+            tickets.append({
+                "complaintID": r[0],
+                "complaint": r[1],
+                "ticketStatus": r[2],
+                "ticketRemarks": r[3],
+                "ticketClass": r[4]
+            })
+        return tickets
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
 # Resolve ticket
 @app.post("/resolve/{complaintID}")
 def resolve_ticket(complaintID: int, data: ResolveTicket):
-    cur.execute(
-        "UPDATE admin SET ticketStatus='Resolved', ticketRemarks=%s WHERE complaintID=%s;",
-        (data.ticketRemarks, complaintID)
-    )
-    conn.commit()
-    return {"message": "Ticket resolved"}
+    try:
+        cur.execute(
+            "UPDATE admin SET ticketStatus='Resolved', ticketRemarks=%s WHERE complaintID=%s;",
+            (data.ticketRemarks, complaintID)
+        )
+        conn.commit()
+        return {"message": "Ticket resolved"}
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
