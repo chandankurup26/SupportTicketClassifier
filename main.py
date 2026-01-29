@@ -2,29 +2,28 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import psycopg2
 from psycopg2.extras import RealDictCursor
-import os
 from dotenv import load_dotenv
+import os
 
 load_dotenv()
+
 app = FastAPI()
 DB_URL = os.getenv("DATABASE_URL")
 
-# Models
 class Ticket(BaseModel):
     complaint: str
 
-# DB Connection helper
 def get_conn():
     return psycopg2.connect(DB_URL, cursor_factory=RealDictCursor)
 
-# -------- Submit a ticket ----------
+# ---------------- Submit Ticket ----------------
 @app.post("/submit")
 def submit_ticket(ticket: Ticket):
     try:
         conn = get_conn()
         cur = conn.cursor()
 
-        # Simple AI classifier simulation (replace with Gemini API call)
+        # Simple AI classifier placeholder
         text = ticket.complaint.lower()
         if "bill" in text or "payment" in text:
             category = "Billing"
@@ -37,12 +36,20 @@ def submit_ticket(ticket: Ticket):
 
         # Insert into Customer table
         cur.execute(
-            """
-            INSERT INTO Customer (complaint) VALUES (%s) RETURNING custID, complaintID;
-            """,
-            (ticket.complaint,),
+            "INSERT INTO Customer (complaint) VALUES (%s) RETURNING custID, complaintID",
+            (ticket.complaint,)
         )
         row = cur.fetchone()
+
+        # Insert into Admin table with ticketClass
+        cur.execute(
+            """
+            INSERT INTO Admin (custID, complaintID, ticketClass)
+            VALUES (%s, %s, %s)
+            """,
+            (row["custID"], row["complaintID"], category)
+        )
+
         conn.commit()
         cur.close()
         conn.close()
@@ -52,7 +59,8 @@ def submit_ticket(ticket: Ticket):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# -------- Retrieve tickets ----------
+
+# ---------------- Get Tickets ----------------
 @app.get("/tickets")
 def get_tickets():
     try:
@@ -60,10 +68,10 @@ def get_tickets():
         cur = conn.cursor()
         cur.execute(
             """
-            SELECT c.complaintID, c.complaint, a.ticketClass, a.ticketStatus as status
+            SELECT c.complaintID, c.complaint, a.ticketClass, a.ticketStatus AS status
             FROM Customer c
             LEFT JOIN Admin a ON c.complaintID = a.complaintID
-            ORDER BY c.complaintID DESC;
+            ORDER BY c.complaintID DESC
             """
         )
         rows = cur.fetchall()
