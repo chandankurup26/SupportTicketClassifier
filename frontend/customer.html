@@ -1,16 +1,28 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Customer Support</title>
+  <meta charset="UTF-8">
+  <title>Raise Complaint</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h2>Raise a Complaint</h2>
-  <textarea id="complaint" placeholder="Enter your complaint"></textarea>
-  <button onclick="submitComplaint()">Submit</button>
+  <header>
+    <h2>Raise a Support Ticket</h2>
+    <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+  </header>
 
-  <p id="result"></p>
+  <div class="container fade-in">
+    <textarea id="complaint"
+      placeholder="Describe your issue clearly..."></textarea>
 
+    <button id="submitBtn" onclick="submitComplaint()">Submit Ticket</button>
+
+    <div id="result" class="result hidden"></div>
+
+    <button class="secondary" onclick="goHome()">← Back to Home</button>
+  </div>
+
+  <div id="toast" class="toast"></div>
   <script src="script.js"></script>
 </body>
 </html>
