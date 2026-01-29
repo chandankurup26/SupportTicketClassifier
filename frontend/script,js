@@ -1,36 +1,98 @@
 const API = "https://YOUR_RENDER_BACKEND_URL";
 
+/* Theme */
+function toggleTheme() {
+  document.body.classList.toggle("light");
+  localStorage.setItem(
+    "theme",
+    document.body.classList.contains("light") ? "light" : "dark"
+  );
+}
+
+(function () {
+  if (localStorage.getItem("theme") === "light") {
+    document.body.classList.add("light");
+  }
+})();
+
+/* Navigation */
+function goHome() {
+  location.href = "index.html";
+}
+
+/* Toast */
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2500);
+}
+
+/* Customer */
 function submitComplaint() {
-  const complaint = document.getElementById("complaint").value;
+  const text = complaint.value.trim();
+  if (!text) return toast("Please enter a complaint");
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Submitting...";
 
   fetch(`${API}/submit`, {
     method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ complaint })
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ complaint: text })
   })
-  .then(res => res.json())
-  .then(data => {
-    document.getElementById("result").innerText =
-      `Ticket Classified as: ${data.classification}`;
-  });
+    .then(res => res.json())
+    .then(data => {
+      result.classList.remove("hidden");
+      result.innerHTML = `
+        🎫 Ticket Created<br>
+        <b>Category:</b> ${data.classification}
+      `;
+      toast("Ticket submitted successfully");
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Submit Ticket";
+    });
 }
 
+/* Admin */
 function loadTickets() {
   fetch(`${API}/tickets`)
     .then(res => res.json())
     .then(data => {
-      const div = document.getElementById("tickets");
-      div.innerHTML = "";
+      tickets.innerHTML = "";
+      let open = 0, resolved = 0;
 
-      data.forEach(t => {
-        div.innerHTML += `
-          <div class="ticket">
-            <p><b>ID:</b> ${t.complaintID}</p>
-            <p><b>Complaint:</b> ${t.complaint}</p>
-            <p><b>Class:</b> ${t.class}</p>
-            <p><b>Status:</b> ${t.status}</p>
-          </div>
-        `;
-      });
+      const status = statusFilter.value;
+
+      data
+        .filter(t => !status || t.status === status)
+        .forEach(t => {
+          if (t.status === "Open") open++;
+          if (t.status === "Resolved") resolved++;
+
+          tickets.innerHTML += `
+            <div class="ticket">
+              <b>${t.ticketClass}</b> • ${t.status}
+              <p>${t.complaint}</p>
+              ${
+                t.status === "Open"
+                ? `<button onclick="resolveTicket(${t.complaintID})">Resolve</button>`
+                : ""
+              }
+            </div>
+          `;
+        });
+
+      totalCount.innerHTML = `${data.length}<br><small>Total</small>`;
+      openCount.innerHTML = `${open}<br><small>Open</small>`;
+      resolvedCount.innerHTML = `${resolved}<br><small>Resolved</small>`;
+    });
+}
+
+function resolveTicket(id) {
+  fetch(`${API}/resolve/${id}`, { method: "POST" })
+    .then(() => {
+      toast("Ticket resolved");
+      loadTickets();
     });
 }
