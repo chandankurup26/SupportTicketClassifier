@@ -1,72 +1,98 @@
-const API = "https://supportticketclassifier.onrender.com"; // Replace with backend URL
+// Backend API
+const API = window.location.hostname.includes("localhost")
+  ? "http://127.0.0.1:8000"
+  : "https://supportticketclassifier.onrender.com";
 
-document.addEventListener("DOMContentLoaded", () => {
-  const backBtn = document.getElementById("backBtn");
-  const themeToggle = document.getElementById("themeToggle");
-  const loadBtn = document.getElementById("loadBtn");
-  const statusFilter = document.getElementById("statusFilter");
-  const msg = document.getElementById("message");
-  const ticketsDiv = document.getElementById("tickets");
-  const total = document.getElementById("totalCount");
-  const open = document.getElementById("openCount");
-  const resolved = document.getElementById("resolvedCount");
+// Elements
+const loadBtn = document.getElementById("loadBtn");
+const ticketsDiv = document.getElementById("tickets");
+const statusFilter = document.getElementById("statusFilter");
+const message = document.getElementById("message");
+const backBtn = document.getElementById("backBtn");
+const themeToggle = document.getElementById("themeToggle");
 
-  // Back button
-  if(backBtn) backBtn.addEventListener("click", () => location.href='index.html');
+// Dark mode toggle
+themeToggle.addEventListener("click", () => {
+  document.body.classList.toggle("dark");
+});
 
-  // Dark mode
-  if(localStorage.getItem('theme')==='dark') document.body.classList.add('dark');
-  if(themeToggle){
-    themeToggle.addEventListener("click", () => {
-      document.body.classList.toggle('dark');
-      localStorage.setItem('theme', document.body.classList.contains('dark')?'dark':'light');
+// Back button
+backBtn.addEventListener("click", () => {
+  window.location.href = "index.html";
+});
+
+// Load tickets
+loadBtn.addEventListener("click", async () => {
+  const status = statusFilter.value;
+
+  message.textContent = "Loading tickets...";
+  ticketsDiv.innerHTML = "";
+
+  try {
+    const response = await fetch(`${API}/tickets`);
+    const tickets = await response.json();
+
+    if (!response.ok) {
+      message.textContent = tickets.detail || "Failed to load tickets.";
+      return;
+    }
+
+    let filtered = tickets;
+    if (status) {
+      filtered = tickets.filter(ticket => ticket.ticketStatus === status);
+    }
+
+    if (filtered.length === 0) {
+      message.textContent = "No tickets found.";
+      return;
+    }
+
+    // Stats
+    document.getElementById("totalCount").innerHTML = `${tickets.length}<br><small>Total</small>`;
+    document.getElementById("openCount").innerHTML = `${tickets.filter(t => t.ticketStatus === "Open").length}<br><small>Open</small>`;
+    document.getElementById("resolvedCount").innerHTML = `${tickets.filter(t => t.ticketStatus === "Resolved").length}<br><small>Resolved</small>`;
+
+    // Display tickets
+    filtered.forEach(ticket => {
+      const ticketCard = document.createElement("div");
+      ticketCard.className = "ticket";
+      ticketCard.innerHTML = `
+        <strong>ID:</strong> ${ticket.complaintID} <br>
+        <strong>Customer ID:</strong> ${ticket.custID} <br>
+        <strong>Complaint:</strong> ${ticket.complaint} <br>
+        <strong>Status:</strong> ${ticket.ticketStatus} <br>
+        <strong>Category:</strong> ${ticket.ticketClass} <br>
+        <strong>Remarks:</strong> ${ticket.ticketRemarks || "-"} <br>
+        <button class="resolveBtn">Mark as Resolved</button>
+      `;
+      ticketsDiv.appendChild(ticketCard);
+
+      const resolveBtn = ticketCard.querySelector(".resolveBtn");
+      resolveBtn.addEventListener("click", async () => {
+        try {
+          const res = await fetch(`${API}/tickets/${ticket.complaintID}/resolve`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" }
+          });
+
+          const result = await res.json();
+          if (res.ok) {
+            ticketCard.querySelector("strong:nth-child(4)").textContent = `Status: Resolved`;
+            ticketCard.querySelector("strong:nth-child(6)").textContent = `Remarks: ${result.ticketRemarks || "-"}`;
+            message.textContent = "Ticket marked as resolved!";
+          } else {
+            message.textContent = result.detail || "Failed to resolve ticket.";
+          }
+        } catch (err) {
+          message.textContent = "Error connecting to backend.";
+          console.error(err);
+        }
+      });
     });
+
+    message.textContent = "Tickets loaded!";
+  } catch (error) {
+    message.textContent = "Error fetching tickets.";
+    console.error(error);
   }
-
-  // Load tickets
-  const loadTickets = () => {
-    msg.textContent="⏳ Loading tickets...";
-    ticketsDiv.innerHTML="";
-    fetch(`${API}/tickets`)
-      .then(r => r.json())
-      .then(data => {
-        const filterValue = statusFilter.value;
-        if(filterValue) data = data.filter(t => t.ticketStatus === filterValue);
-        msg.textContent=`✅ ${data.length} tickets loaded`;
-
-        let o=0,r=0;
-        data.forEach(t => {
-          if(t.ticketStatus==="Open") o++;
-          if(t.ticketStatus==="Resolved") r++;
-          const div = document.createElement("div");
-          div.className="ticket";
-          div.innerHTML = `<b>${t.ticketClass}</b> • ${t.ticketStatus}<br/>
-            ${t.complaint}<br/>
-            <button onclick="resolveTicket(${t.complaintID})" ${t.ticketStatus==='Resolved'?'disabled':''}>Resolve</button>
-            <p>${t.ticketRemarks || ''}</p>`;
-          ticketsDiv.appendChild(div);
-        });
-
-        if(total) total.innerHTML=`${data.length}<br><small>Total</small>`;
-        if(open) open.innerHTML=`${o}<br><small>Open</small>`;
-        if(resolved) resolved.innerHTML=`${r}<br><small>Resolved</small>`;
-      })
-      .catch(()=> msg.textContent="❌ Failed to load tickets.");
-  };
-
-  if(loadBtn) loadBtn.addEventListener("click", loadTickets);
-  if(statusFilter) statusFilter.addEventListener("change", loadTickets);
-
-  // Expose resolve function globally
-  window.resolveTicket = function(id){
-    const remarks = prompt("Enter remarks for this ticket:");
-    if(remarks===null) return;
-    fetch(`${API}/resolve/${id}`, {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ticketRemarks:remarks})
-    })
-    .then(() => loadTickets())
-    .catch(()=> alert("❌ Failed to resolve ticket."));
-  };
 });
