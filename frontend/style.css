@@ -1,4 +1,4 @@
-/* Basic Reset */
+/* Reset */
 * {
   margin: 0;
   padding: 0;
@@ -10,6 +10,7 @@ body {
   background-color: #f0f2f5;
   color: #333;
   min-height: 100vh;
+  transition: background 0.3s, color 0.3s;
 }
 
 .dark {
