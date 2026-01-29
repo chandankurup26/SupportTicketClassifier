@@ -6,28 +6,33 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h2>Admin Dashboard</h2>
+  <div class="container">
+    <header>
+      <h2>Admin Dashboard</h2>
+      <button id="themeToggle" class="theme-toggle">🌙</button>
+    </header>
 
-  <div class="filters">
-    <select id="statusFilter">
-      <option value="">All Status</option>
-      <option value="Open">Open</option>
-      <option value="Resolved">Resolved</option>
-    </select>
-    <button id="loadBtn">Load Tickets</button>
+    <main class="admin-page">
+      <div class="filters">
+        <select id="statusFilter" class="input-field">
+          <option value="">All Status</option>
+          <option value="Open">Open</option>
+          <option value="Resolved">Resolved</option>
+        </select>
+        <button id="loadBtn" class="primary-btn">Load Tickets</button>
+      </div>
+
+      <div class="stats">
+        <div class="stat" id="totalCount">0<br><small>Total</small></div>
+        <div class="stat" id="openCount">0<br><small>Open</small></div>
+        <div class="stat" id="resolvedCount">0<br><small>Resolved</small></div>
+      </div>
+
+      <div id="tickets" class="ticket-container"></div>
+      <p id="message" class="message"></p>
+      <button id="backBtn" class="secondary-btn">← Back to Home</button>
+    </main>
   </div>
-
-  <div class="stats">
-    <div class="stat" id="totalCount">0<br><small>Total</small></div>
-    <div class="stat" id="openCount">0<br><small>Open</small></div>
-    <div class="stat" id="resolvedCount">0<br><small>Resolved</small></div>
-  </div>
-
-  <div id="tickets"></div>
-  <p id="message" class="message"></p>
-  <button id="backBtn">← Back to Home</button>
-  <button id="themeToggle" class="theme-toggle">🌙</button>
-
   <script src="admin.js"></script>
 </body>
 </html>
