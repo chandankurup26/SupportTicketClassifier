@@ -1,5 +1,15 @@
 const API = "https://YOUR_RENDER_BACKEND_URL";
 
+/* ---------- INIT ---------- */
+document.addEventListener("DOMContentLoaded", () => {
+  initTheme();
+  bindButtons();
+
+  if (document.getElementById("tickets")) {
+    loadTickets();
+  }
+});
+
 /* ---------- THEME ---------- */
 function toggleTheme() {
   document.body.classList.toggle("light");
@@ -9,20 +19,41 @@ function toggleTheme() {
   );
 }
 
-(function initTheme() {
+function initTheme() {
   if (localStorage.getItem("theme") === "light") {
     document.body.classList.add("light");
   }
-})();
+}
 
-/* ---------- NAVIGATION (FIXED) ---------- */
+/* ---------- NAVIGATION ---------- */
 function goHome() {
   window.location.href = "/";
+}
+
+/* ---------- BUTTON BINDINGS ---------- */
+function bindButtons() {
+  const submitBtn = document.getElementById("submitBtn");
+  const backBtns = document.querySelectorAll(".back-btn");
+  const themeBtn = document.querySelector(".theme-toggle");
+
+  if (submitBtn) {
+    submitBtn.addEventListener("click", submitComplaint);
+  }
+
+  backBtns.forEach(btn => {
+    btn.addEventListener("click", goHome);
+  });
+
+  if (themeBtn) {
+    themeBtn.addEventListener("click", toggleTheme);
+  }
 }
 
 /* ---------- TOAST ---------- */
 function toast(msg) {
   const t = document.getElementById("toast");
+  if (!t) return;
+
   t.textContent = msg;
   t.classList.add("show");
   setTimeout(() => t.classList.remove("show"), 2500);
@@ -30,8 +61,17 @@ function toast(msg) {
 
 /* ---------- CUSTOMER ---------- */
 function submitComplaint() {
-  const text = complaint.value.trim();
-  if (!text) return toast("Please enter a complaint");
+  const textarea = document.getElementById("complaint");
+  const result = document.getElementById("result");
+  const submitBtn = document.getElementById("submitBtn");
+
+  if (!textarea || !submitBtn) return;
+
+  const text = textarea.value.trim();
+  if (!text) {
+    toast("Please enter a complaint");
+    return;
+  }
 
   submitBtn.disabled = true;
   submitBtn.textContent = "Submitting...";
@@ -49,8 +89,12 @@ function submitComplaint() {
         <b>Category:</b> ${data.classification}
       `;
       toast("Ticket submitted successfully");
+    })
+    .catch(() => toast("Something went wrong"))
+    .finally(() => {
       submitBtn.disabled = false;
       submitBtn.textContent = "Submit Ticket";
+      textarea.value = "";
     });
 }
 
@@ -59,40 +103,7 @@ function loadTickets() {
   fetch(`${API}/tickets`)
     .then(res => res.json())
     .then(data => {
-      tickets.innerHTML = "";
-      let open = 0, resolved = 0;
-
-      const status = statusFilter.value;
-
-      data
-        .filter(t => !status || t.status === status)
-        .forEach(t => {
-          if (t.status === "Open") open++;
-          if (t.status === "Resolved") resolved++;
-
-          tickets.innerHTML += `
-            <div class="ticket">
-              <b>${t.ticketClass}</b> • ${t.status}
-              <p>${t.complaint}</p>
-              ${
-                t.status === "Open"
-                ? `<button onclick="resolveTicket(${t.complaintID})">Resolve</button>`
-                : ""
-              }
-            </div>
-          `;
-        });
-
-      totalCount.innerHTML = `${data.length}<br><small>Total</small>`;
-      openCount.innerHTML = `${open}<br><small>Open</small>`;
-      resolvedCount.innerHTML = `${resolved}<br><small>Resolved</small>`;
-    });
-}
-
-function resolveTicket(id) {
-  fetch(`${API}/resolve/${id}`, { method: "POST" })
-    .then(() => {
-      toast("Ticket resolved");
-      loadTickets();
-    });
-}
+      const ticketsDiv = document.getElementById("tickets");
+      const statusFilter = document.getElementById("statusFilter");
+      const total = document.getElementById("totalCount");
+      const open = document.getElem
