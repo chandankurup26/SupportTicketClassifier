@@ -1,4 +1,4 @@
-const API = "https://YOUR_RENDER_BACKEND_URL"; // Replace with your backend URL
+const API = "https://supportticketclassifier.onrender.com"; // Replace with your backend URL
 
 document.addEventListener("DOMContentLoaded", () => {
   const submitBtn = document.getElementById("submitBtn");
