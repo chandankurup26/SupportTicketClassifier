@@ -6,13 +6,23 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>🎫 Support Ticket Classifier</h1>
-  <div class="home">
-    <button id="customerBtn">🙋 Customer</button>
-    <button id="adminBtn">🧑‍💼 Admin</button>
-  </div>
-  <button id="themeToggle" class="theme-toggle">🌙</button>
+  <div class="container">
+    <header>
+      <h1>🎫 Support Ticket Classifier</h1>
+      <button id="themeToggle" class="theme-toggle">🌙</button>
+    </header>
 
-  <script src="index.js"></script>
+    <main class="home-page">
+      <div class="btn-group">
+        <button id="customerBtn" class="primary-btn">🙋 Customer</button>
+        <button id="adminBtn" class="secondary-btn">🧑‍💼 Admin</button>
+      </div>
+    </main>
+
+    <footer>
+      <p>Powered by FastAPI, Neon, and Gemini AI</p>
+    </footer>
+  </div>
 </body>
+<script src="index.js"></script>
 </html>
