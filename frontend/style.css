@@ -43,15 +43,11 @@ header h1, header h2 {
   cursor: pointer;
 }
 
-.home-page, .form-page, .admin-page {
+.home {
   display: flex;
   flex-direction: column;
-  align-items: center;
-}
-
-.btn-group {
-  display: flex;
   gap: 20px;
+  align-items: center;
 }
 
 .primary-btn, .secondary-btn {
@@ -84,7 +80,7 @@ header h1, header h2 {
 .input-field {
   width: 100%;
   max-width: 600px;
-  padding: 10px 15px;
+  padding: 12px 15px;
   border-radius: 8px;
   border: 1px solid #ccc;
   margin-bottom: 15px;
