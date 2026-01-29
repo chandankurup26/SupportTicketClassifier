@@ -1,6 +1,6 @@
 const API = "https://YOUR_RENDER_BACKEND_URL";
 
-/* Theme */
+/* ---------- THEME ---------- */
 function toggleTheme() {
   document.body.classList.toggle("light");
   localStorage.setItem(
@@ -9,18 +9,18 @@ function toggleTheme() {
   );
 }
 
-(function () {
+(function initTheme() {
   if (localStorage.getItem("theme") === "light") {
     document.body.classList.add("light");
   }
 })();
 
-/* Navigation */
+/* ---------- NAVIGATION (FIXED) ---------- */
 function goHome() {
-  location.href = "index.html";
+  window.location.href = "/";
 }
 
-/* Toast */
+/* ---------- TOAST ---------- */
 function toast(msg) {
   const t = document.getElementById("toast");
   t.textContent = msg;
@@ -28,7 +28,7 @@ function toast(msg) {
   setTimeout(() => t.classList.remove("show"), 2500);
 }
 
-/* Customer */
+/* ---------- CUSTOMER ---------- */
 function submitComplaint() {
   const text = complaint.value.trim();
   if (!text) return toast("Please enter a complaint");
@@ -54,7 +54,7 @@ function submitComplaint() {
     });
 }
 
-/* Admin */
+/* ---------- ADMIN ---------- */
 function loadTickets() {
   fetch(`${API}/tickets`)
     .then(res => res.json())
