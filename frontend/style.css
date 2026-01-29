@@ -150,3 +150,20 @@ button.secondary {
 .toast.show {
   opacity: 1;
 }
+
+/* ---------- FIXED THEME TOGGLE ---------- */
+.theme-toggle.fixed {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  font-size: 20px;
+  border: none;
+  cursor: pointer;
+  background: rgba(0,0,0,0.35);
+  color: white;
+  backdrop-filter: blur(8px);
+  z-index: 999;
+}
