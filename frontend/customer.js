@@ -1,39 +1,52 @@
-const API = "https://supportticketclassifier.onrender.com"; // Replace with your backend URL
+// Backend API
+const API = window.location.hostname.includes("localhost")
+  ? "http://127.0.0.1:8000"
+  : "https://supportticketclassifier.onrender.com";
 
-document.addEventListener("DOMContentLoaded", () => {
-  const submitBtn = document.getElementById("submitBtn");
-  const backBtn = document.getElementById("backBtn");
-  const themeToggle = document.getElementById("themeToggle");
-  const msg = document.getElementById("message");
+// Elements
+const submitBtn = document.getElementById("submitBtn");
+const complaintInput = document.getElementById("complaint");
+const message = document.getElementById("message");
+const backBtn = document.getElementById("backBtn");
+const themeToggle = document.getElementById("themeToggle");
 
-  // Back button
-  if(backBtn) backBtn.addEventListener("click", () => location.href='index.html');
+// Dark mode toggle
+themeToggle.addEventListener("click", () => {
+  document.body.classList.toggle("dark");
+});
 
-  // Dark mode
-  if(localStorage.getItem('theme')==='dark') document.body.classList.add('dark');
-  if(themeToggle){
-    themeToggle.addEventListener("click", () => {
-      document.body.classList.toggle('dark');
-      localStorage.setItem('theme', document.body.classList.contains('dark')?'dark':'light');
-    });
+// Back button
+backBtn.addEventListener("click", () => {
+  window.location.href = "index.html";
+});
+
+// Submit complaint
+submitBtn.addEventListener("click", async () => {
+  const complaint = complaintInput.value.trim();
+  if (!complaint) {
+    message.textContent = "Please enter a complaint.";
+    return;
   }
 
-  // Submit ticket
-  if(submitBtn) submitBtn.addEventListener("click", () => {
-    const complaint = document.getElementById("complaint").value.trim();
-    if(!complaint){ msg.textContent="❌ Please enter a complaint."; return; }
-    msg.textContent="⏳ Submitting...";
+  message.textContent = "Submitting ticket...";
 
-    fetch(`${API}/submit`, {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({complaint})
-    })
-    .then(r => r.json())
-    .then(data => {
-      msg.textContent = `✅ Ticket submitted. Category: ${data.classification}`;
-      document.getElementById("complaint").value = "";
-    })
-    .catch(() => { msg.textContent = "❌ Failed to submit ticket." });
-  });
+  try {
+    const response = await fetch(`${API}/tickets`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ complaint })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      message.textContent = `Ticket submitted! ID: ${data.complaintID}, Category: ${data.classification}`;
+      complaintInput.value = "";
+    } else {
+      message.textContent = data.detail || "Failed to submit ticket.";
+    }
+  } catch (error) {
+    message.textContent = "Error connecting to backend.";
+    console.error(error);
+  }
 });
