@@ -1,9 +1,7 @@
-// Dynamic backend URL (local + deployed)
 const API = window.location.hostname.includes("localhost")
   ? "http://127.0.0.1:8000"
   : "https://supportticketclassifier.onrender.com";
 
-// Elements (DO NOT CHANGE IDS)
 const loadBtn = document.getElementById("loadBtn");
 const ticketsDiv = document.getElementById("tickets");
 const statusFilter = document.getElementById("statusFilter");
@@ -11,12 +9,12 @@ const message = document.getElementById("message");
 const backBtn = document.getElementById("backBtn");
 const themeToggle = document.getElementById("themeToggle");
 
-// Dark mode toggle
+// Dark mode
 themeToggle.addEventListener("click", () => {
   document.body.classList.toggle("dark");
 });
 
-// Back to home
+// Back
 backBtn.addEventListener("click", () => {
   window.location.href = "index.html";
 });
@@ -28,12 +26,14 @@ loadBtn.addEventListener("click", async () => {
 
   try {
     const response = await fetch(`${API}/tickets`);
-    const tickets = await response.json();
 
     if (!response.ok) {
-      message.textContent = tickets.detail || "Failed to load tickets.";
+      const err = await response.text();
+      message.textContent = err || "Failed to load tickets.";
       return;
     }
+
+    const tickets = await response.json();
 
     // Stats
     document.getElementById("totalCount").innerHTML =
@@ -43,7 +43,6 @@ loadBtn.addEventListener("click", async () => {
     document.getElementById("resolvedCount").innerHTML =
       `${tickets.filter(t => t.ticketStatus === "Resolved").length}<br><small>Resolved</small>`;
 
-    // Filter tickets
     const status = statusFilter.value;
     const filtered = status
       ? tickets.filter(t => t.ticketStatus === status)
@@ -60,7 +59,6 @@ loadBtn.addEventListener("click", async () => {
 
       ticketCard.innerHTML = `
         <strong>ID:</strong> ${ticket.complaintID}<br>
-        <strong>Customer ID:</strong> ${ticket.custID}<br>
         <strong>Complaint:</strong> ${ticket.complaint}<br>
         <strong>Status:</strong> <span class="status">${ticket.ticketStatus}</span><br>
         <strong>Category:</strong> ${ticket.ticketClass}<br>
@@ -74,38 +72,35 @@ loadBtn.addEventListener("click", async () => {
 
       ticketsDiv.appendChild(ticketCard);
 
-      // Resolve button logic
       const resolveBtn = ticketCard.querySelector(".resolveBtn");
       if (resolveBtn) {
         resolveBtn.addEventListener("click", async () => {
           message.textContent = "Resolving ticket...";
+          resolveBtn.disabled = true;
 
           try {
             const res = await fetch(`${API}/resolve/${ticket.complaintID}`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                ticketRemarks: "Resolved by admin"
-              })
+              body: JSON.stringify({ ticketRemarks: "Resolved by admin" })
             });
 
-            const result = await res.json();
-
             if (!res.ok) {
-              message.textContent = result.detail || "Failed to resolve ticket.";
+              const err = await res.text();
+              message.textContent = err || "Failed to resolve ticket.";
+              resolveBtn.disabled = false;
               return;
             }
 
-            // Update UI instantly
             ticketCard.querySelector(".status").textContent = "Resolved";
-            ticketCard.querySelector(".remarks").textContent =
-              result.ticketRemarks || "Resolved by admin";
-
+            ticketCard.querySelector(".remarks").textContent = "Resolved by admin";
             resolveBtn.remove();
+
             message.textContent = "Ticket resolved successfully!";
           } catch (err) {
             console.error(err);
             message.textContent = "Error connecting to backend.";
+            resolveBtn.disabled = false;
           }
         });
       }
