@@ -1,0 +1,36 @@
+const API = "https://YOUR_RENDER_BACKEND_URL";
+
+function submitComplaint() {
+  const complaint = document.getElementById("complaint").value;
+
+  fetch(`${API}/submit`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ complaint })
+  })
+  .then(res => res.json())
+  .then(data => {
+    document.getElementById("result").innerText =
+      `Ticket Classified as: ${data.classification}`;
+  });
+}
+
+function loadTickets() {
+  fetch(`${API}/tickets`)
+    .then(res => res.json())
+    .then(data => {
+      const div = document.getElementById("tickets");
+      div.innerHTML = "";
+
+      data.forEach(t => {
+        div.innerHTML += `
+          <div class="ticket">
+            <p><b>ID:</b> ${t.complaintID}</p>
+            <p><b>Complaint:</b> ${t.complaint}</p>
+            <p><b>Class:</b> ${t.class}</p>
+            <p><b>Status:</b> ${t.status}</p>
+          </div>
+        `;
+      });
+    });
+}
