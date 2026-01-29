@@ -1,107 +1,89 @@
 const API = "https://supportticketclassifier.onrender.com";
 
-/* ---------- INIT ---------- */
 document.addEventListener("DOMContentLoaded", () => {
-  initTheme();
-  bindButtons();
+  const customerBtn = document.getElementById("customerBtn");
+  const adminBtn = document.getElementById("adminBtn");
+  const backBtn = document.getElementById("backBtn");
+  const themeToggle = document.getElementById("themeToggle");
+  const submitBtn = document.getElementById("submitBtn");
+  const loadBtn = document.getElementById("loadBtn");
+  const statusFilter = document.getElementById("statusFilter");
 
-  if (document.getElementById("tickets")) {
-    loadTickets();
-  }
+  if(customerBtn) customerBtn.onclick = () => location.href='customer.html';
+  if(adminBtn) adminBtn.onclick = () => location.href='admin.html';
+  if(backBtn) backBtn.onclick = () => location.href='index.html';
+  if(themeToggle) themeToggle.onclick = () => {
+    document.body.classList.toggle('dark');
+    localStorage.setItem('theme', document.body.classList.contains('dark')?'dark':'light');
+  };
+  if(localStorage.getItem('theme')==='dark') document.body.classList.add('dark');
+  if(submitBtn) submitBtn.onclick = submitTicket;
+  if(loadBtn) loadBtn.onclick = () => loadTickets(statusFilter.value);
+  if(statusFilter) statusFilter.onchange = () => loadTickets(statusFilter.value);
 });
 
-/* ---------- THEME ---------- */
-function toggleTheme() {
-  document.body.classList.toggle("light");
-  localStorage.setItem(
-    "theme",
-    document.body.classList.contains("light") ? "light" : "dark"
-  );
-}
-
-function initTheme() {
-  if (localStorage.getItem("theme") === "light") {
-    document.body.classList.add("light");
-  }
-}
-
-/* ---------- NAVIGATION ---------- */
-function goHome() {
-  window.location.href = "/";
-}
-
-/* ---------- BUTTON BINDINGS ---------- */
-function bindButtons() {
-  const submitBtn = document.getElementById("submitBtn");
-  const backBtns = document.querySelectorAll(".back-btn");
-  const themeBtn = document.querySelector(".theme-toggle");
-
-  if (submitBtn) {
-    submitBtn.addEventListener("click", submitComplaint);
-  }
-
-  backBtns.forEach(btn => {
-    btn.addEventListener("click", goHome);
-  });
-
-  if (themeBtn) {
-    themeBtn.addEventListener("click", toggleTheme);
-  }
-}
-
-/* ---------- TOAST ---------- */
-function toast(msg) {
-  const t = document.getElementById("toast");
-  if (!t) return;
-
-  t.textContent = msg;
-  t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 2500);
-}
-
-/* ---------- CUSTOMER ---------- */
-function submitComplaint() {
-  const textarea = document.getElementById("complaint");
-  const result = document.getElementById("result");
-  const submitBtn = document.getElementById("submitBtn");
-
-  if (!textarea || !submitBtn) return;
-
-  const text = textarea.value.trim();
-  if (!text) {
-    toast("Please enter a complaint");
-    return;
-  }
-
-  submitBtn.disabled = true;
-  submitBtn.textContent = "Submitting...";
-
-  fetch(`${API}/submit`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ complaint: text })
+function submitTicket() {
+  const complaint = document.getElementById("complaint").value.trim();
+  const msg = document.getElementById("message");
+  if(!complaint){ msg.textContent="❌ Please enter a complaint."; return; }
+  msg.textContent = "⏳ Submitting...";
+  fetch(`${API}/submit`,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({complaint})
   })
-    .then(res => res.json())
-    .then(data => {
-      result.classList.remove("hidden");
-      result.innerHTML = `
-        🎫 Ticket Created<br>
-        <b>Category:</b> ${data.classification}
-      `;
-      toast("Ticket submitted successfully");
-    })
-    .catch(() => toast("Something went wrong"))
-    .finally(() => {
-      submitBtn.disabled = false;
-      submitBtn.textContent = "Submit Ticket";
-      textarea.value = "";
-    });
+  .then(r=>r.json())
+  .then(data=>{
+    msg.textContent=`✅ Ticket submitted. Category: ${data.classification}`;
+    document.getElementById("complaint").value='';
+  })
+  .catch(()=>{ msg.textContent="❌ Failed to submit ticket."; });
 }
 
-/* ---------- ADMIN ---------- */
-function loadTickets() {
+function loadTickets(filter="") {
+  const msg = document.getElementById("message");
+  const ticketsDiv = document.getElementById("tickets");
+  const total = document.getElementById("totalCount");
+  const open = document.getElementById("openCount");
+  const resolved = document.getElementById("resolvedCount");
+  ticketsDiv.innerHTML="";
+  msg.textContent="⏳ Loading tickets...";
+
   fetch(`${API}/tickets`)
-    .then(res => res.json())
+    .then(r=>r.json())
+    .then(data=>{
+      if(filter) data = data.filter(t=>t.ticketStatus===filter);
+      msg.textContent=`✅ ${data.length} tickets loaded`;
+      let o=0,r=0;
+      data.forEach(t=>{
+        if(t.ticketStatus==="Open") o++;
+        if(t.ticketStatus==="Resolved") r++;
+        const div = document.createElement("div");
+        div.className="ticket";
+        div.innerHTML=`<b>${t.ticketClass}</b> • ${t.ticketStatus}<br/>${t.complaint}<br/>
+        <button onclick="resolveTicket(${t.complaintID})" ${t.ticketStatus==='Resolved'?'disabled':''}>Resolve</button>
+        <p>${t.ticketRemarks||''}</p>`;
+        ticketsDiv.appendChild(div);
+      });
+      if(total) total.innerHTML=`${data.length}<br><small>Total</small>`;
+      if(open) open.innerHTML=`${o}<br><small>Open</small>`;
+      if(resolved) resolved.innerHTML=`${r}<br><small>Resolved</small>`;
+    })
+    .catch(()=> msg.textContent="❌ Failed to load tickets.");
+}
+
+function resolveTicket(id){
+  const remarks = prompt("Enter remarks for this ticket:");
+  if(remarks===null) return;
+  fetch(`${API}/resolve/${id}`,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({ticketRemarks:remarks})
+  })
+  .then(()=> loadTickets(document.getElementById("statusFilter")?.value||""))
+  .catch(()=> alert("Failed to resolve ticket."));
+}
+
     .then(data => {
       const ticketsDiv = document.getElementById("tickets");
       const statusFilter = document.getElementById("statusFilter");
