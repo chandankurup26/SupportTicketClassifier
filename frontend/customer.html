@@ -6,13 +6,19 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h2>Raise a Support Ticket</h2>
-  <textarea id="complaint" placeholder="Describe your issue..."></textarea>
-  <button id="submitBtn">Submit Ticket</button>
-  <p id="message" class="message"></p>
-  <button id="backBtn">← Back to Home</button>
-  <button id="themeToggle" class="theme-toggle">🌙</button>
+  <div class="container">
+    <header>
+      <h2>Raise a Support Ticket</h2>
+      <button id="themeToggle" class="theme-toggle">🌙</button>
+    </header>
 
+    <main class="form-page">
+      <textarea id="complaint" placeholder="Describe your issue..." class="input-field"></textarea>
+      <button id="submitBtn" class="primary-btn">Submit Ticket</button>
+      <p id="message" class="message"></p>
+      <button id="backBtn" class="secondary-btn">← Back to Home</button>
+    </main>
+  </div>
   <script src="customer.js"></script>
 </body>
 </html>
