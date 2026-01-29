@@ -82,3 +82,7 @@ def resolve_ticket(data: ResolveTicket):
     conn.commit()
 
     return {"message": "Ticket updated"}
+
+@app.get("/")
+def root():
+    return {"message": "Backend is running"}
