@@ -147,23 +147,3 @@ def resolve_ticket(complaintID: int, data: ResolveTicket):
         conn.rollback()
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
-from fastapi import FastAPI, HTTPException, Path
-from pydantic import BaseModel
-
-app = FastAPI()
-
-class ResolveTicket(BaseModel):
-    remarks: str = "Resolved by admin"
-
-@app.put("/tickets/{ticket_id}/resolve")
-async def resolve_ticket(ticket_id: int, resolve: ResolveTicket = None):
-    # Lookup ticket in DB
-    ticket = db_get_ticket(ticket_id)  # Your DB logic
-    if not ticket:
-        raise HTTPException(status_code=404, detail="Ticket not found")
-    
-    # Update ticket
-    db_update_ticket(ticket_id, status="Resolved", remarks="Resolved by admin")  # Your DB logic
-
-    return {"ticketRemarks": "Resolved by admin"}
-
