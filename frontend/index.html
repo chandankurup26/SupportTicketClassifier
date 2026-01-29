@@ -1,12 +1,28 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Support System</title>
+  <meta charset="UTF-8">
+  <title>Support Ticket Classifier</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Support Ticket Classifier</h1>
-  <button onclick="location.href='customer.html'">Customer</button>
-  <button onclick="location.href='admin.html'">Admin</button>
+  <header>
+    <h1>🎫 Support Ticket Classifier</h1>
+    <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+  </header>
+
+  <main class="home">
+    <div class="card" onclick="location.href='customer.html'">
+      <h2>🙋 Customer</h2>
+      <p>Raise a support ticket</p>
+    </div>
+
+    <div class="card" onclick="location.href='admin.html'">
+      <h2>🧑‍💼 Admin</h2>
+      <p>View & resolve tickets</p>
+    </div>
+  </main>
+
+  <script src="script.js"></script>
 </body>
 </html>
