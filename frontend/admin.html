@@ -1,14 +1,39 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Admin Panel</title>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h2>Admin Dashboard</h2>
-  <button onclick="loadTickets()">Load Tickets</button>
-  <div id="tickets"></div>
+  <header>
+    <h2>Admin Dashboard</h2>
+    <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+  </header>
 
+  <div class="container fade-in">
+
+    <div class="stats">
+      <div class="stat" id="totalCount">0<br><small>Total</small></div>
+      <div class="stat" id="openCount">0<br><small>Open</small></div>
+      <div class="stat" id="resolvedCount">0<br><small>Resolved</small></div>
+    </div>
+
+    <div class="filters">
+      <select id="statusFilter" onchange="loadTickets()">
+        <option value="">All Status</option>
+        <option value="Open">Open</option>
+        <option value="Resolved">Resolved</option>
+      </select>
+      <button onclick="loadTickets()">Refresh</button>
+    </div>
+
+    <div id="tickets" class="tickets"></div>
+
+    <button class="secondary" onclick="goHome()">← Back to Home</button>
+  </div>
+
+  <div id="toast" class="toast"></div>
   <script src="script.js"></script>
 </body>
 </html>
