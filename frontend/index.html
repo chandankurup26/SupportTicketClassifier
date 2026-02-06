@@ -2,16 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Support Ticket Classifier</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>🎫 Support Ticket Classifier</h1>
-  <div class="home">
-    <button id="customerBtn">🙋 Customer</button>
-    <button id="adminBtn">🧑‍💼 Admin</button>
-  </div>
-  <button id="themeToggle" class="theme-toggle">🌙</button>
+
+  <button id="themeToggle" class="theme-toggle" aria-label="Toggle Dark Mode">🌙</button>
+
+  <main class="container">
+    <header>
+      <h1>🎫 Support Ticket Classifier</h1>
+      <p class="message">Efficiently routing your concerns to the right experts.</p>
+    </header>
+
+    <div class="home">
+      <button id="customerBtn" class="primary-btn">
+        🙋 Customer Portal
+      </button>
+      
+      <button id="adminBtn" class="secondary-btn">
+        🧑‍💼 Admin Dashboard
+      </button>
+    </div>
+
+    <footer>
+      <p>&copy; 2026 Support System AI. All rights reserved.</p>
+    </footer>
+  </main>
 
   <script src="index.js"></script>
 </body>
